@@ -3,6 +3,9 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
+import { isNative } from "@/lib/data-source";
+import { checkReportsDueLocal } from "@/lib/local/reports";
+import { checkNewsAlertsLocal } from "@/lib/local/news-alerts";
 
 // No background scheduler exists in a locally-run Next.js app, so "automatic"
 // checks (weekly/monthly report generation, news alerts) only actually run
@@ -17,10 +20,9 @@ export function PeriodicChecks() {
     let cancelled = false;
 
     async function runChecks() {
-      const results = await Promise.allSettled([
-        fetch("/api/reports/check-due"),
-        fetch("/api/news/check-due"),
-      ]);
+      const results = await Promise.allSettled(
+        isNative() ? [checkReportsDueLocal(), checkNewsAlertsLocal()] : [fetch("/api/reports/check-due"), fetch("/api/news/check-due")]
+      );
       if (cancelled) return;
       const anyOk = results.some((r) => r.status === "fulfilled");
       if (anyOk) queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });

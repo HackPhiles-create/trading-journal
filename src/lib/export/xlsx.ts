@@ -1,9 +1,12 @@
-import "server-only";
+// Deliberately NOT "server-only" — SheetJS's XLSX.utils/XLSX.write are
+// portable to the browser/WebView; only the *output type* differs (Buffer
+// for the Node server route, Uint8Array for the offline Android build's
+// client-side export in lib/local/export.ts).
 import * as XLSX from "xlsx";
-import type { TradeWithRelations } from "@/lib/analytics/aggregate";
 import type { ReportSnapshot } from "@/lib/analytics/reports";
+import type { CsvTrade } from "@/lib/export/csv";
 
-export function tradesToWorkbookBuffer(trades: TradeWithRelations[], report?: ReportSnapshot): Buffer {
+function buildWorkbook(trades: CsvTrade[], report?: ReportSnapshot) {
   const wb = XLSX.utils.book_new();
 
   if (report) {
@@ -44,5 +47,14 @@ export function tradesToWorkbookBuffer(trades: TradeWithRelations[], report?: Re
   );
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mistakeRows), "Mistakes");
 
-  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  return wb;
+}
+
+export function tradesToWorkbookBuffer(trades: CsvTrade[], report?: ReportSnapshot): Buffer {
+  return XLSX.write(buildWorkbook(trades, report), { type: "buffer", bookType: "xlsx" });
+}
+
+/** Browser/WebView-safe variant (no Node Buffer) — used by the offline Android export. */
+export function tradesToWorkbookArray(trades: CsvTrade[], report?: ReportSnapshot): Uint8Array {
+  return XLSX.write(buildWorkbook(trades, report), { type: "array", bookType: "xlsx" });
 }

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchJson } from "@/lib/api-client";
+import { isNative } from "@/lib/data-source";
+import { listNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/local/notifications";
 
 export interface NotificationDTO {
   id: string;
@@ -15,7 +17,7 @@ export interface NotificationDTO {
 export function useNotifications() {
   return useQuery({
     queryKey: queryKeys.notifications(),
-    queryFn: () => fetchJson<NotificationDTO[]>("/api/notifications"),
+    queryFn: () => (isNative() ? listNotifications() : fetchJson<NotificationDTO[]>("/api/notifications")),
     refetchInterval: 60_000,
   });
 }
@@ -24,10 +26,9 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetchJson<NotificationDTO>(`/api/notifications/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ isRead: true }),
-      }),
+      isNative()
+        ? markNotificationRead(id, true)
+        : fetchJson<NotificationDTO>(`/api/notifications/${id}`, { method: "PATCH", body: JSON.stringify({ isRead: true }) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications() }),
   });
 }
@@ -35,7 +36,8 @@ export function useMarkNotificationRead() {
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => fetchJson<{ ok: true }>("/api/notifications", { method: "PATCH" }),
+    mutationFn: () =>
+      isNative() ? markAllNotificationsRead().then(() => ({ ok: true as const })) : fetchJson<{ ok: true }>("/api/notifications", { method: "PATCH" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications() }),
   });
 }

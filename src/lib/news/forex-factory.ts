@@ -1,5 +1,10 @@
-import "server-only";
-
+// Deliberately NOT "server-only" — this is a plain external fetch with no
+// Prisma/Node dependency, so both the server (via the /api/news/calendar
+// route) and the offline Android build (calling getCalendar() directly,
+// client-side) share this exact code. The custom User-Agent header below is
+// a forbidden header in a browser/WebView fetch and gets silently dropped
+// there — harmless, ForexFactory's public feed doesn't require it.
+//
 // ForexFactory's own calendar widget is backed by this JSON feed (no
 // official public API exists) — same data ForexFactory.com renders,
 // confirmed structurally stable: title/country/date/impact/forecast/previous.

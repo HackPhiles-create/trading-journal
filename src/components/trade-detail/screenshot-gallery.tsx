@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ImagePlus, Trash2, X, Loader2, ImageOff } from "lucide-react";
@@ -8,9 +8,48 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useUploadScreenshot, useDeleteScreenshot, type TradeDTO } from "@/hooks/use-trades";
+import { isNative } from "@/lib/data-source";
+import { resolveScreenshotUri } from "@/lib/local/screenshots";
 import type { ScreenshotPhase } from "@/lib/constants";
 
 type Screenshot = TradeDTO["screenshots"][number];
+
+// On native, `filePath` is a relative on-device path, not a URL — it needs
+// an async resolve (via the Filesystem plugin) into a capacitor:// src
+// before an <img>/<Image> can load it. On web it's just /api/uploads/<path>.
+// `resolved` is keyed by the path it was resolved FOR, so switching to a
+// different filePath (e.g. zooming to another screenshot without unmount)
+// shows the loading state via the path mismatch below rather than a
+// synchronous setState reset at the top of the effect.
+function useScreenshotSrc(filePath: string): string | null {
+  const [resolved, setResolved] = useState<{ path: string; src: string } | null>(null);
+
+  useEffect(() => {
+    if (!isNative()) return;
+    let cancelled = false;
+    resolveScreenshotUri(filePath).then((src) => {
+      if (!cancelled) setResolved({ path: filePath, src });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath]);
+
+  if (!isNative()) return `/api/uploads/${filePath}`;
+  return resolved?.path === filePath ? resolved.src : null;
+}
+
+function ScreenshotImage({ filePath, alt, className }: { filePath: string; alt: string; className: string }) {
+  const src = useScreenshotSrc(filePath);
+  if (!src) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  return <Image src={src} alt={alt} fill className={className} unoptimized />;
+}
 
 function PhaseSection({
   tradeId,
@@ -75,7 +114,7 @@ function PhaseSection({
           {screenshots.map((s) => (
             <div key={s.id} className="group relative aspect-video overflow-hidden rounded-xl border border-border bg-muted">
               <button type="button" className="h-full w-full" onClick={() => onZoom(s)}>
-                <Image src={`/api/uploads/${s.filePath}`} alt={s.caption ?? label} fill className="object-cover transition-transform group-hover:scale-105" unoptimized />
+                <ScreenshotImage filePath={s.filePath} alt={s.caption ?? label} className="object-cover transition-transform group-hover:scale-105" />
               </button>
               <button
                 type="button"
@@ -122,7 +161,7 @@ export function ScreenshotGallery({ trade }: { trade: TradeDTO }) {
           <DialogTitle className="sr-only">Screenshot preview</DialogTitle>
           {zoomed && (
             <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
-              <Image src={`/api/uploads/${zoomed.filePath}`} alt={zoomed.caption ?? "Screenshot"} fill className="object-contain" unoptimized />
+              <ScreenshotImage filePath={zoomed.filePath} alt={zoomed.caption ?? "Screenshot"} className="object-contain" />
               <button
                 onClick={() => setZoomed(null)}
                 className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"

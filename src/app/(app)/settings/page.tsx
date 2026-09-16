@@ -16,6 +16,8 @@ import { fetchJson } from "@/lib/api-client";
 import { playSuccessSound } from "@/lib/sounds";
 import { getBrowserTimezone } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { isNative } from "@/lib/data-source";
+import { getSignedInTradeId, signOutLocal } from "@/lib/local/auth";
 
 const NEWS_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNY"];
 
@@ -41,13 +43,17 @@ export default function SettingsPage() {
 
   const { data: me } = useQuery({
     queryKey: ["auth", "me"],
-    queryFn: () => fetchJson<{ authenticated: true; tradeId: string }>("/api/auth/me"),
+    queryFn: async () =>
+      isNative()
+        ? { authenticated: true as const, tradeId: (await getSignedInTradeId()) ?? "" }
+        : fetchJson<{ authenticated: true; tradeId: string }>("/api/auth/me"),
   });
 
   async function handleSignOut() {
     setSigningOut(true);
     try {
-      await fetchJson("/api/auth/logout", { method: "POST" });
+      if (isNative()) await signOutLocal();
+      else await fetchJson("/api/auth/logout", { method: "POST" });
       queryClient.clear();
       router.push("/login");
     } catch {
@@ -345,25 +351,27 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <div className="flex items-center gap-2">
-          <SettingsIcon className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Demo Data</h3>
+      {!isNative() && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="flex items-center gap-2">
+            <SettingsIcon className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Demo Data</h3>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This journal can ship with sample trades so the dashboard looks realistic immediately. Reset regenerates a fresh
+            sample dataset; Clear removes demo trades entirely so you can start journaling real trades. Your real trades are
+            never touched by either action.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setConfirmReset(true)}>
+              <RotateCcw className="h-3.5 w-3.5" /> Reset Demo Data
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 text-loss hover:text-loss" onClick={() => setConfirmClear(true)}>
+              <Trash2 className="h-3.5 w-3.5" /> Clear Demo Data
+            </Button>
+          </div>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This journal can ship with sample trades so the dashboard looks realistic immediately. Reset regenerates a fresh
-          sample dataset; Clear removes demo trades entirely so you can start journaling real trades. Your real trades are
-          never touched by either action.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setConfirmReset(true)}>
-            <RotateCcw className="h-3.5 w-3.5" /> Reset Demo Data
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-loss hover:text-loss" onClick={() => setConfirmClear(true)}>
-            <Trash2 className="h-3.5 w-3.5" /> Clear Demo Data
-          </Button>
-        </div>
-      </div>
+      )}
 
       <ConfirmDialog
         open={confirmReset}

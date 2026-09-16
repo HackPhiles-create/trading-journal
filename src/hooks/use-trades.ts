@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchJson } from "@/lib/api-client";
+import { isNative } from "@/lib/data-source";
+import { listTrades, getTrade, createTrade, updateTrade, closeTrade, deleteTrade } from "@/lib/local/trades";
+import { uploadScreenshotLocal, deleteScreenshotLocal } from "@/lib/local/screenshots";
 import type { CreateTradeInput, CloseTradeInput } from "@/lib/schemas/trade";
 
 export interface TradeDTO {
@@ -65,14 +68,14 @@ function buildQuery(filters?: TradeFilterQuery) {
 export function useTrades(filters?: TradeFilterQuery) {
   return useQuery({
     queryKey: queryKeys.trades(filters),
-    queryFn: () => fetchJson<TradeDTO[]>(`/api/trades${buildQuery(filters)}`),
+    queryFn: () => (isNative() ? listTrades(filters) : fetchJson<TradeDTO[]>(`/api/trades${buildQuery(filters)}`)),
   });
 }
 
 export function useTrade(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.trade(id ?? ""),
-    queryFn: () => fetchJson<TradeDTO>(`/api/trades/${id}`),
+    queryFn: () => (isNative() ? getTrade(id as string) : fetchJson<TradeDTO>(`/api/trades/${id}`)),
     enabled: !!id,
   });
 }
@@ -81,10 +84,12 @@ export function useCreateTrade() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateTradeInput) =>
-      fetchJson<{ trade: TradeDTO; warnings: { field: string; message: string }[] }>("/api/trades", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
+      isNative()
+        ? createTrade(input)
+        : fetchJson<{ trade: TradeDTO; warnings: { field: string; message: string }[] }>("/api/trades", {
+            method: "POST",
+            body: JSON.stringify(input),
+          }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
@@ -97,7 +102,7 @@ export function useUpdateTrade(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: Partial<CreateTradeInput>) =>
-      fetchJson<TradeDTO>(`/api/trades/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+      isNative() ? updateTrade(id, input) : fetchJson<TradeDTO>(`/api/trades/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
@@ -109,7 +114,7 @@ export function useCloseTrade(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CloseTradeInput) =>
-      fetchJson<TradeDTO>(`/api/trades/${id}/close`, { method: "PATCH", body: JSON.stringify(input) }),
+      isNative() ? closeTrade(id, input) : fetchJson<TradeDTO>(`/api/trades/${id}/close`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
@@ -121,7 +126,8 @@ export function useCloseTrade(id: string) {
 export function useDeleteTrade() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => fetchJson<{ ok: true }>(`/api/trades/${id}`, { method: "DELETE" }),
+    mutationFn: (id: string) =>
+      isNative() ? deleteTrade(id).then(() => ({ ok: true as const })) : fetchJson<{ ok: true }>(`/api/trades/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
@@ -133,6 +139,7 @@ export function useUploadScreenshot(tradeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ file, phase, caption }: { file: File; phase: "BEFORE" | "AFTER"; caption?: string }) => {
+      if (isNative()) return uploadScreenshotLocal(tradeId, file, phase, caption);
       const formData = new FormData();
       formData.append("file", file);
       formData.append("phase", phase);
@@ -152,7 +159,9 @@ export function useDeleteScreenshot(tradeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (screenshotId: string) =>
-      fetchJson<{ ok: true }>(`/api/trades/${tradeId}/screenshots/${screenshotId}`, { method: "DELETE" }),
+      isNative()
+        ? deleteScreenshotLocal(screenshotId).then(() => ({ ok: true as const }))
+        : fetchJson<{ ok: true }>(`/api/trades/${tradeId}/screenshots/${screenshotId}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.trade(tradeId) }),
   });
 }

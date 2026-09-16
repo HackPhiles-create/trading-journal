@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { format, startOfMonth } from "date-fns";
+import { toast } from "sonner";
 import { FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
-import { exportReportUrl } from "@/hooks/use-reports";
+import { exportReportUrl, useExportReportLocal } from "@/hooks/use-reports";
+import { isNative } from "@/lib/data-source";
 
 // A direct-download export — no saved Report row required. Useful when you
 // just want a PDF/CSV/XLSX for an arbitrary range right now.
@@ -17,16 +19,21 @@ export function QuickExportCard() {
   const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(format(new Date(), "yyyy-MM-dd"));
   const [accountId, setAccountId] = useState("all");
+  const exportLocal = useExportReportLocal();
 
-  function download(fmt: "pdf" | "csv" | "xlsx") {
-    const url = exportReportUrl({
-      format: fmt,
-      accountId: accountId === "all" ? null : accountId,
-      dateFrom,
-      dateTo,
-    });
+  async function download(fmt: "pdf" | "csv" | "xlsx") {
+    const opts = { format: fmt, accountId: accountId === "all" ? null : accountId, dateFrom, dateTo };
+    if (isNative()) {
+      try {
+        await exportLocal.mutateAsync(opts);
+        toast.success(`${fmt.toUpperCase()} export ready to share.`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Export failed.");
+      }
+      return;
+    }
     const a = document.createElement("a");
-    a.href = url;
+    a.href = exportReportUrl(opts);
     a.click();
   }
 

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchJson } from "@/lib/api-client";
+import { isNative } from "@/lib/data-source";
+import { getOrCreateLocalPreference, updateLocalPreference } from "@/lib/local/preferences";
 
 export interface PreferenceDTO {
   id: string;
@@ -25,14 +27,17 @@ export interface PreferenceDTO {
 }
 
 export function useSettings() {
-  return useQuery({ queryKey: queryKeys.settings(), queryFn: () => fetchJson<PreferenceDTO>("/api/settings") });
+  return useQuery({
+    queryKey: queryKeys.settings(),
+    queryFn: () => (isNative() ? getOrCreateLocalPreference() : fetchJson<PreferenceDTO>("/api/settings")),
+  });
 }
 
 export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: Partial<PreferenceDTO>) =>
-      fetchJson<PreferenceDTO>("/api/settings", { method: "PATCH", body: JSON.stringify(input) }),
+      isNative() ? updateLocalPreference(input) : fetchJson<PreferenceDTO>("/api/settings", { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.settings() }),
   });
 }

@@ -1,9 +1,26 @@
-import "server-only";
+// Deliberately NOT "server-only" — Papa.unparse is a plain string transform
+// with no Node dependency, reused client-side by the offline Android
+// build's export (lib/local/export.ts) as well as the web export route.
 import Papa from "papaparse";
-import type { TradeWithRelations } from "@/lib/analytics/aggregate";
 import type { ReportSnapshot } from "@/lib/analytics/reports";
 
-export function tradesToCsv(trades: TradeWithRelations[]): string {
+export interface CsvTrade {
+  entryDateTime: string | Date;
+  asset: { symbol: string };
+  direction: string;
+  entryPrice: number;
+  stopLoss: number;
+  takeProfit: number;
+  lotSize: number;
+  exitPrice: number | null;
+  result: string | null;
+  actualPnl: number | null;
+  strategy: { name: string } | null;
+  account: { name: string };
+  mistakes: { note: string | null; mistake: { label: string } }[];
+}
+
+export function tradesToCsv(trades: CsvTrade[]): string {
   const rows = trades.map((t) => ({
     Date: new Date(t.entryDateTime).toISOString(),
     Asset: t.asset.symbol,

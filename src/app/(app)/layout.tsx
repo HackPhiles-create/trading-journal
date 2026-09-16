@@ -1,5 +1,10 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { NativeAuthGate } from "@/components/native-auth-gate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <NativeAuthGate>
+      <AppShell>{children}</AppShell>
+    </NativeAuthGate>
+  );
 }

@@ -1,6 +1,7 @@
-import "server-only";
-
-// PBKDF2-SHA256 via the Web Crypto API rather than Node's `crypto.scrypt` —
+// Deliberately NOT "server-only" — used both by the web login API routes
+// and, client-side, by the offline Android build's local auth
+// (lib/local/auth.ts). PBKDF2-SHA256 via the Web Crypto API rather than
+// Node's `crypto.scrypt` —
 // route handlers run on the Node runtime, but Web Crypto works identically
 // there and keeps this code portable if any of these routes ever move to the
 // Edge runtime.

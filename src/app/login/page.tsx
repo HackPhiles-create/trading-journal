@@ -7,6 +7,8 @@ import { TrendingUp, User, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide
 import { fetchJson } from "@/lib/api-client";
 import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
+import { isNative } from "@/lib/data-source";
+import { hasLocalAccount, registerLocal, loginLocal, isUnlocked } from "@/lib/local/auth";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -14,9 +16,19 @@ function LoginPageInner() {
   const queryClient = useQueryClient();
   const { playSuccess, playError } = useSound();
 
+  // Native has no middleware to bounce an already-unlocked visit to /login
+  // back to the app — do it here instead.
+  useEffect(() => {
+    if (!isNative()) return;
+    isUnlocked().then((unlocked) => {
+      if (unlocked) router.replace("/dashboard");
+    });
+  }, [router]);
+
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ["auth", "status"],
-    queryFn: () => fetchJson<{ hasAccount: boolean }>("/api/auth/status"),
+    queryFn: async () =>
+      isNative() ? { hasAccount: await hasLocalAccount() } : fetchJson<{ hasAccount: boolean }>("/api/auth/status"),
   });
 
   const isSetup = status?.hasAccount === false;
@@ -51,11 +63,16 @@ function LoginPageInner() {
 
     setSubmitting(true);
     try {
-      const endpoint = isSetup ? "/api/auth/register" : "/api/auth/login";
-      await fetchJson<{ ok: true; tradeId: string }>(endpoint, {
-        method: "POST",
-        body: JSON.stringify({ tradeId, password }),
-      });
+      if (isNative()) {
+        if (isSetup) await registerLocal(tradeId, password);
+        else await loginLocal(tradeId, password);
+      } else {
+        const endpoint = isSetup ? "/api/auth/register" : "/api/auth/login";
+        await fetchJson<{ ok: true; tradeId: string }>(endpoint, {
+          method: "POST",
+          body: JSON.stringify({ tradeId, password }),
+        });
+      }
       playSuccess();
       queryClient.clear();
       const next = searchParams.get("next");
