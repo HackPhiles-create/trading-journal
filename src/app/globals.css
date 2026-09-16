@@ -1,26 +1,270 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-inter);
+  --color-profit: var(--profit);
+  --color-loss: var(--loss);
+  --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 2px 8px -2px rgb(0 0 0 / 0.06);
+  --shadow-elevated: 0 4px 16px -4px rgb(0 0 0 / 0.10), 0 12px 32px -8px rgb(0 0 0 / 0.10);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.17 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0 0);
+  --primary: oklch(0.6 0.19 259);
+  --primary-foreground: oklch(0.98 0.01 259);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.94 0.02 259);
+  --accent-foreground: oklch(0.35 0.1 259);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0.6 0.19 259 / 40%);
+  --profit: oklch(0.6 0.16 155);
+  --loss: oklch(0.6 0.2 25);
+  --chart-1: oklch(0.6 0.19 259);
+  --chart-2: oklch(0.6 0.16 155);
+  --chart-3: oklch(0.7 0.17 60);
+  --chart-4: oklch(0.6 0.2 25);
+  --chart-5: oklch(0.55 0.14 300);
+  --radius: 1rem;
+  --sidebar: oklch(0.975 0 0);
+  --sidebar-foreground: oklch(0.17 0 0);
+  --sidebar-primary: oklch(0.6 0.19 259);
+  --sidebar-primary-foreground: oklch(0.98 0.01 259);
+  --sidebar-accent: oklch(0.94 0.02 259);
+  --sidebar-accent-foreground: oklch(0.35 0.1 259);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-ring: oklch(0.6 0.19 259 / 40%);
+}
+
+.dark {
+  --background: oklch(0.16 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.21 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.65 0.18 259);
+  --primary-foreground: oklch(0.16 0 0);
+  --secondary: oklch(0.26 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.24 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.28 0.03 259);
+  --accent-foreground: oklch(0.85 0.05 259);
+  --destructive: oklch(0.7 0.19 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.65 0.18 259 / 45%);
+  --profit: oklch(0.72 0.17 155);
+  --loss: oklch(0.68 0.19 25);
+  --chart-1: oklch(0.65 0.18 259);
+  --chart-2: oklch(0.72 0.17 155);
+  --chart-3: oklch(0.75 0.16 60);
+  --chart-4: oklch(0.68 0.19 25);
+  --chart-5: oklch(0.65 0.14 300);
+  --sidebar: oklch(0.19 0 0);
+  --sidebar-foreground: oklch(0.96 0 0);
+  --sidebar-primary: oklch(0.65 0.18 259);
+  --sidebar-primary-foreground: oklch(0.16 0 0);
+  --sidebar-accent: oklch(0.28 0.03 259);
+  --sidebar-accent-foreground: oklch(0.85 0.05 259);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.65 0.18 259 / 45%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  /* Staggered entrance for grids/lists: apply to the parent, each direct
+     child (already animate-in fade-in) fades up in sequence instead of all
+     at once. Pure CSS — Framer Motion gets stuck invisible in the Android
+     WebView, so anything WebView-facing must animate this way. */
+  .stagger-in > * {
+    animation-fill-mode: both;
+  }
+  .stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-in > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-in > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-in > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-in > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-in > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-in > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-in > *:nth-child(8) { animation-delay: 280ms; }
+  .stagger-in > *:nth-child(9) { animation-delay: 320ms; }
+  .stagger-in > *:nth-child(10) { animation-delay: 360ms; }
+  .stagger-in > *:nth-child(n + 11) { animation-delay: 400ms; }
+
+  /* Soft pulse ring for an unread indicator (notification bell, nav badges). */
+  .pulse-ring {
+    position: relative;
+  }
+  .pulse-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0.55;
+    animation: pulse-ring-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes pulse-ring-ping {
+    0% { transform: scale(1); opacity: 0.55; }
+    75%, 100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  /* Login screen ambient background — three soft blurred blobs drifting
+     slowly, plus a faint grid. Pure CSS transforms/opacity only (no
+     Framer Motion — it gets stuck invisible in the Android WebView). */
+  .login-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    opacity: 0.35;
+    will-change: transform;
+  }
+  .login-orb-1 {
+    top: -10%;
+    left: -10%;
+    height: 42vh;
+    width: 42vh;
+    background: radial-gradient(circle, oklch(0.65 0.18 259) 0%, transparent 70%);
+    animation: login-drift-1 16s ease-in-out infinite;
+  }
+  .login-orb-2 {
+    bottom: -15%;
+    right: -10%;
+    height: 48vh;
+    width: 48vh;
+    background: radial-gradient(circle, oklch(0.6 0.15 300) 0%, transparent 70%);
+    animation: login-drift-2 20s ease-in-out infinite;
+  }
+  .login-orb-3 {
+    top: 40%;
+    left: 60%;
+    height: 30vh;
+    width: 30vh;
+    background: radial-gradient(circle, oklch(0.72 0.17 200) 0%, transparent 70%);
+    animation: login-drift-3 24s ease-in-out infinite;
+  }
+  .login-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, oklch(1 0 0 / 4%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(1 0 0 / 4%) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+  }
+  @keyframes login-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(6%, 8%) scale(1.1); }
+  }
+  @keyframes login-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-8%, -6%) scale(1.08); }
+  }
+  @keyframes login-drift-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-10%, 10%) scale(0.95); }
+  }
+
+  .login-logo {
+    animation: login-logo-glow 3s ease-in-out infinite;
+  }
+  @keyframes login-logo-glow {
+    0%, 100% { box-shadow: 0 0 40px -8px rgba(10, 132, 255, 0.7); }
+    50% { box-shadow: 0 0 56px -6px rgba(10, 132, 255, 0.9); }
+  }
+
+  .login-shake {
+    animation: login-shake-x 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+  @keyframes login-shake-x {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-7px); }
+    40%, 60% { transform: translateX(7px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .login-orb,
+    .login-logo,
+    .login-shake {
+      animation: none !important;
+    }
+  }
 }

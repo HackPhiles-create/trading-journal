@@ -1,0 +1,241 @@
+// Trading Journal — Prisma schema.
+//
+// IMPORTANT: SQLite has no native enum type. Every "enum-like" field below
+// (direction, session, account type, notification type, emotional state,
+// etc.) is intentionally a plain String column. The allowed value sets live
+// once in src/lib/constants.ts as `as const` string-union arrays, enforced
+// via zod schemas in src/lib/schemas/. Do not "fix" these into native Prisma
+// enums — SQLite will reject it.
+//
+// IMPORTANT: this project is on Prisma 7, which uses the `prisma-client`
+// generator (not `prisma-client-js`) and driver adapters instead of a
+// datasource url in this file. The connection string lives in
+// prisma7.config.ts / .env, not here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Account {
+  id              String   @id @default(cuid())
+  name            String
+  type            String // AccountType: PERSONAL | PROP_FIRM | DEMO | BROKER | OTHER
+  broker          String?
+  currency        String   @default("USD")
+  startingBalance Float?
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  trades Trade[]
+
+  @@map("accounts")
+}
+
+model Asset {
+  id           String   @id @default(cuid())
+  symbol       String   @unique
+  name         String
+  assetClass   String // AssetClass: FOREX | CRYPTO | STOCK | INDEX | COMMODITY | OTHER
+  contractSize Float    @default(1)
+  isCustom     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  trades Trade[]
+
+  @@map("assets")
+}
+
+model Strategy {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  isCustom    Boolean @default(false)
+
+  trades Trade[]
+
+  @@map("strategies")
+}
+
+model ChecklistItem {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  isPreset  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  answers TradeChecklistAnswer[]
+
+  @@map("checklist_items")
+}
+
+model TradeChecklistAnswer {
+  id              String  @id @default(cuid())
+  tradeId         String
+  checklistItemId String
+  checked         Boolean @default(true)
+
+  trade         Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  checklistItem ChecklistItem @relation(fields: [checklistItemId], references: [id])
+
+  @@unique([tradeId, checklistItemId])
+  @@map("trade_checklist_answers")
+}
+
+model Mistake {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  isPreset  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  trades TradeMistake[]
+
+  @@map("mistakes")
+}
+
+model TradeMistake {
+  id        String  @id @default(cuid())
+  tradeId   String
+  mistakeId String
+  note      String?
+
+  trade   Trade   @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  mistake Mistake @relation(fields: [mistakeId], references: [id])
+
+  @@unique([tradeId, mistakeId])
+  @@map("trade_mistakes")
+}
+
+model Screenshot {
+  id        String   @id @default(cuid())
+  tradeId   String
+  filePath  String // relative path under /uploads, e.g. "{tradeId}/before-{uuid}.jpg"
+  phase     String // ScreenshotPhase: BEFORE | AFTER
+  caption   String?
+  createdAt DateTime @default(now())
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@map("screenshots")
+}
+
+model Trade {
+  id         String  @id @default(cuid())
+  accountId  String
+  assetId    String
+  strategyId String?
+
+  direction String // Direction: BUY | SELL
+  status    String  @default("OPEN") // TradeStatus: OPEN | CLOSED
+  session   String? // Session: ASIA | LONDON | NEWYORK | OVERLAP | OTHER
+
+  entryDateTime DateTime
+  entryPrice    Float
+  stopLoss      Float
+  takeProfit    Float
+  lotSize       Float
+  riskPercent   Float? // user-specified account risk %, optional
+
+  exitPrice       Float?
+  exitDateTime    DateTime?
+  result          String? // TradeResult: WIN | LOSS | BREAKEVEN
+  actualPnl       Float?
+  actualRMultiple Float?
+
+  pnlManuallyOverridden Boolean @default(false)
+
+  // "Why did I take this trade?"
+  reasoningText     String?
+  marketCondition   String?
+  confirmation      String?
+  entryReason       String?
+  confluence        String?
+  riskReasoning     String?
+
+  // Review, after close
+  emotionalState String? // EmotionalState
+  whatWentWell   String?
+  whatToImprove  String?
+  lessonLearned  String?
+
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account  Account   @relation(fields: [accountId], references: [id])
+  asset    Asset     @relation(fields: [assetId], references: [id])
+  strategy Strategy? @relation(fields: [strategyId], references: [id])
+
+  checklistAnswers TradeChecklistAnswer[]
+  mistakes         TradeMistake[]
+  screenshots      Screenshot[]
+
+  @@index([accountId, entryDateTime])
+  @@index([assetId])
+  @@index([strategyId])
+  @@map("trades")
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  type            String // NotificationType
+  title           String
+  body            String
+  isRead          Boolean  @default(false)
+  relatedEntityId String?
+  createdAt       DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  type        String // ReportType: WEEKLY | MONTHLY
+  accountId   String? // null = all accounts
+  periodStart DateTime
+  periodEnd   DateTime
+  totalPnl    Float
+  winRate     Float
+  tradeCount  Int
+  dataJson    String // full serialized aggregate snapshot, frozen at generation time
+  generatedAt DateTime @default(now())
+
+  @@map("reports")
+}
+
+model Preference {
+  id                    String  @id @default("default")
+  theme                 String  @default("system")
+  timezone              String  @default("UTC")
+  defaultAccountId      String?
+  preferredMinRR        Float   @default(2)
+  notifyWeeklyReport    Boolean @default(true)
+  notifyMonthlyReport   Boolean @default(true)
+  notifyRepeatedMistake Boolean @default(true)
+  notifyMultipleLosses  Boolean @default(true)
+  notifyLowRR           Boolean @default(true)
+  notifyNewStats        Boolean @default(true)
+  soundEnabled          Boolean @default(true)
+  soundOnClick          Boolean @default(true)
+  autoDetectMistakes    Boolean @default(true)
+  mistakeWindowDays     Int     @default(30)
+  mistakeMinOccurrences Int     @default(3)
+  newsAlertsEnabled     Boolean @default(true)
+  newsAlertCurrency     String  @default("USD,JPY") // comma-separated list of watched currency codes
+  newsAlertHoursBefore  Int     @default(1)
+
+  @@map("preferences")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tradeId      String   @unique // the login ID a trader signs in with
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  @@map("users")
+}

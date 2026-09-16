@@ -1,0 +1,15 @@
+export const queryKeys = {
+  trades: (filters?: unknown) => ["trades", filters] as const,
+  trade: (id: string) => ["trades", id] as const,
+  accounts: () => ["accounts"] as const,
+  assets: () => ["assets"] as const,
+  strategies: () => ["strategies"] as const,
+  mistakes: () => ["mistakes"] as const,
+  checklistItems: () => ["checklist-items"] as const,
+  analyticsSummary: (filters?: unknown) => ["analytics", "summary", filters] as const,
+  mistakePatterns: (accountId?: string) => ["analytics", "mistake-patterns", accountId] as const,
+  reports: () => ["reports"] as const,
+  report: (id: string) => ["reports", id] as const,
+  notifications: () => ["notifications"] as const,
+  settings: () => ["settings"] as const,
+};
