@@ -1,7 +1,12 @@
 import "server-only";
 import path from "node:path";
 
-export const UPLOADS_ROOT = path.join(process.cwd(), "uploads");
+// Defaults to ./uploads for local dev; in production (e.g. Railway) set
+// UPLOADS_DIR to a path inside a mounted persistent volume, or uploaded
+// screenshots vanish on every redeploy.
+export const UPLOADS_ROOT = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(process.cwd(), "uploads");
 
 export const ALLOWED_SCREENSHOT_TYPES = ["image/png", "image/jpeg", "image/webp"];
 export const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024; // 8MB
