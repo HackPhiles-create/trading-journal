@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { parseSpreadsheetFile } from "@/lib/import/parse";
 import { autoDetectMapping } from "@/lib/import/mapping";
 import { fetchJson } from "@/lib/api-client";
+import { isNative } from "@/lib/data-source";
+import { resolveAndValidateImportRowsLocal, commitImportRowsLocal } from "@/lib/local/import";
+import { importCommitRowSchema } from "@/lib/schemas/import";
 import { ColumnMappingStep } from "@/components/import/column-mapping-step";
 import { ImportPreviewTable, type ImportRowPreview } from "@/components/import/import-preview-table";
 import type { ColumnMapping } from "@/lib/schemas/import";
@@ -58,10 +61,12 @@ export function ImportWizard({ open, onOpenChange }: { open: boolean; onOpenChan
   async function handleValidate() {
     try {
       setBusy(true);
-      const result = await fetchJson<{ rows: ImportRowPreview[] }>("/api/import/preview", {
-        method: "POST",
-        body: JSON.stringify({ rows: rawRows, mapping }),
-      });
+      const result = isNative()
+        ? { rows: await resolveAndValidateImportRowsLocal(rawRows, mapping) }
+        : await fetchJson<{ rows: ImportRowPreview[] }>("/api/import/preview", {
+            method: "POST",
+            body: JSON.stringify({ rows: rawRows, mapping }),
+          });
       setPreviewRows(result.rows);
       setSelected(new Set(result.rows.filter((r) => r.errors.length === 0).map((r) => r.rowIndex)));
       setStep("preview");
@@ -80,10 +85,12 @@ export function ImportWizard({ open, onOpenChange }: { open: boolean; onOpenChan
     }
     try {
       setBusy(true);
-      const result = await fetchJson<{ imported: number; skipped: { rowIndex: number; reason: string }[] }>("/api/import/commit", {
-        method: "POST",
-        body: JSON.stringify({ rows: rowsToCommit }),
-      });
+      const result = isNative()
+        ? await commitImportRowsLocal(rowsToCommit.map((r) => importCommitRowSchema.parse(r)))
+        : await fetchJson<{ imported: number; skipped: { rowIndex: number; reason: string }[] }>("/api/import/commit", {
+            method: "POST",
+            body: JSON.stringify({ rows: rowsToCommit }),
+          });
       setCommitResult(result);
       setStep("done");
       queryClient.invalidateQueries({ queryKey: ["trades"] });
