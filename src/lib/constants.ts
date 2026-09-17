@@ -88,13 +88,26 @@ export const PRESET_MISTAKES = [
 // not a precise broker P&L model.
 export const DEFAULT_ASSETS: Array<{ symbol: string; name: string; assetClass: AssetClass; contractSize: number }> = [
   { symbol: "XAUUSD", name: "Gold", assetClass: "COMMODITY", contractSize: 100 },
+  { symbol: "XAGUSD", name: "Silver", assetClass: "COMMODITY", contractSize: 50 },
   { symbol: "EURUSD", name: "Euro / US Dollar", assetClass: "FOREX", contractSize: 100000 },
   { symbol: "GBPUSD", name: "British Pound / US Dollar", assetClass: "FOREX", contractSize: 100000 },
   { symbol: "USDJPY", name: "US Dollar / Japanese Yen", assetClass: "FOREX", contractSize: 1000 },
+  { symbol: "AUDUSD", name: "Australian Dollar / US Dollar", assetClass: "FOREX", contractSize: 100000 },
+  { symbol: "USDCAD", name: "US Dollar / Canadian Dollar", assetClass: "FOREX", contractSize: 100000 },
+  { symbol: "USDCHF", name: "US Dollar / Swiss Franc", assetClass: "FOREX", contractSize: 100000 },
+  { symbol: "NZDUSD", name: "New Zealand Dollar / US Dollar", assetClass: "FOREX", contractSize: 100000 },
+  { symbol: "EURJPY", name: "Euro / Japanese Yen", assetClass: "FOREX", contractSize: 1000 },
+  { symbol: "GBPJPY", name: "British Pound / Japanese Yen", assetClass: "FOREX", contractSize: 1000 },
   { symbol: "BTCUSD", name: "Bitcoin / US Dollar", assetClass: "CRYPTO", contractSize: 1 },
   { symbol: "ETHUSD", name: "Ethereum / US Dollar", assetClass: "CRYPTO", contractSize: 1 },
+  { symbol: "SOLUSD", name: "Solana / US Dollar", assetClass: "CRYPTO", contractSize: 1 },
+  { symbol: "XRPUSD", name: "Ripple / US Dollar", assetClass: "CRYPTO", contractSize: 1 },
   { symbol: "NAS100", name: "Nasdaq 100", assetClass: "INDEX", contractSize: 10 },
   { symbol: "US30", name: "Dow Jones 30", assetClass: "INDEX", contractSize: 5 },
+  { symbol: "SPX500", name: "S&P 500", assetClass: "INDEX", contractSize: 10 },
+  { symbol: "GER40", name: "Germany 40 (DAX)", assetClass: "INDEX", contractSize: 5 },
+  { symbol: "AAPL", name: "Apple Inc.", assetClass: "STOCK", contractSize: 1 },
+  { symbol: "TSLA", name: "Tesla Inc.", assetClass: "STOCK", contractSize: 1 },
 ];
 
 // Minimum trades required before a behavioral/"improvement" observation is

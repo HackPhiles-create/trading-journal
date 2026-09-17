@@ -3,8 +3,21 @@
 import { CapacitorSQLite } from "@capacitor-community/sqlite";
 import { isNative } from "@/lib/data-source";
 import { LOCAL_SCHEMA_SQL, LOCAL_SCHEMA_VERSION } from "@/lib/local/schema";
+import { PRESET_CHECKLIST_ITEMS, PRESET_MISTAKES, DEFAULT_ASSETS } from "@/lib/constants";
+import { genId, nowIso } from "@/lib/local/utils";
 
 const DB_NAME = "trading_journal";
+
+// Same 5 strategies as lib/seed/reference-data.ts's DEMO_STRATEGIES,
+// redefined here rather than imported — that file imports Prisma at module
+// scope, which must never reach the client bundle.
+const DEFAULT_STRATEGIES = [
+  { name: "Order Block", description: "Entries from unmitigated institutional order blocks." },
+  { name: "Break of Structure", description: "Continuation entries after a confirmed structure break." },
+  { name: "Liquidity Sweep", description: "Fade entries after a stop-hunt sweep of prior highs/lows." },
+  { name: "Trend Continuation", description: "Pullback entries in the direction of the prevailing trend." },
+  { name: "Reversal Setup", description: "Counter-trend entries at exhaustion / reversal zones." },
+];
 
 let initPromise: Promise<void> | null = null;
 
@@ -28,6 +41,35 @@ async function ensureOpen(): Promise<void> {
   await CapacitorSQLite.open({ database: DB_NAME });
 }
 
+// Preset checklist items / mistakes / default assets / demo strategies —
+// the on-device equivalent of lib/seed/reference-data.ts's seedReferenceData(),
+// run exactly once (see the first-run gate in runMigrations below). Uses
+// CapacitorSQLite directly rather than the run()/queryAll() wrappers in this
+// file, since those call getLocalDb() — which would deadlock against the
+// in-flight initPromise this runs under.
+async function seedReferenceDataLocal(): Promise<void> {
+  const now = nowIso();
+  const statements = [
+    ...PRESET_CHECKLIST_ITEMS.map((label) => ({
+      statement: "INSERT INTO checklist_items (id, label, isPreset, createdAt) VALUES (?, ?, 1, ?)",
+      values: [genId(), label, now],
+    })),
+    ...PRESET_MISTAKES.map((label) => ({
+      statement: "INSERT INTO mistakes (id, label, isPreset, createdAt) VALUES (?, ?, 1, ?)",
+      values: [genId(), label, now],
+    })),
+    ...DEFAULT_ASSETS.map((asset) => ({
+      statement: "INSERT INTO assets (id, symbol, name, assetClass, contractSize, isCustom, createdAt) VALUES (?, ?, ?, ?, ?, 0, ?)",
+      values: [genId(), asset.symbol, asset.name, asset.assetClass, asset.contractSize, now],
+    })),
+    ...DEFAULT_STRATEGIES.map((s) => ({
+      statement: "INSERT INTO strategies (id, name, description, isCustom) VALUES (?, ?, ?, 0)",
+      values: [genId(), s.name, s.description],
+    })),
+  ];
+  await CapacitorSQLite.executeSet({ database: DB_NAME, set: statements, transaction: true });
+}
+
 async function runMigrations(): Promise<void> {
   await CapacitorSQLite.execute({ database: DB_NAME, statements: LOCAL_SCHEMA_SQL, transaction: true });
 
@@ -44,6 +86,7 @@ async function runMigrations(): Promise<void> {
       statement: "INSERT INTO local_schema_version (id, version) VALUES (1, ?)",
       values: [LOCAL_SCHEMA_VERSION],
     });
+    await seedReferenceDataLocal();
   }
   // Future schema changes: add `if (existingVersion < N) { ...ALTER/UPDATE...; bump version }`
   // steps here, the same way prisma/migrations/ accumulates files over time.
