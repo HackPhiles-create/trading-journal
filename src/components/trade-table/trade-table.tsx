@@ -186,7 +186,7 @@ export function TradeTable() {
                   <TableRow
                     key={row.id}
                     className="cursor-pointer"
-                    onClick={() => router.push(`/journal/${row.original.id}`)}
+                    onClick={() => router.push(`/journal/detail?tradeId=${row.original.id}`)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>

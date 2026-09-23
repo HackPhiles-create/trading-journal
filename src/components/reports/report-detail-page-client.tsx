@@ -1,6 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { FileText, Trophy, TrendingDown, Lightbulb } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,11 +54,14 @@ function StatBox({ label, value, tone }: { label: string; value: string; tone?: 
   );
 }
 
-export function ReportDetailPageClient() {
-  // See TradeDetailPageClient's comment — same reasoning for the native
-  // static export's single placeholder path.
-  const { reportId } = useParams<{ reportId: string }>();
-  const { data: report, isLoading } = useReport(reportId);
+function ReportDetailContent() {
+  // See TradeDetailPageClient's comment — a query string on a non-dynamic
+  // page, rather than a [reportId] route segment, avoids the native static
+  // export's missing-RSC-payload failure for any id other than the single
+  // generateStaticParams placeholder (the actual cause of "auto refresh").
+  const searchParams = useSearchParams();
+  const reportId = searchParams.get("reportId") ?? "";
+  const { data: report, isLoading } = useReport(reportId || undefined);
 
   if (isLoading) {
     return (
@@ -206,5 +210,13 @@ export function ReportDetailPageClient() {
         </div>
       )}
     </div>
+  );
+}
+
+export function ReportDetailPageClient() {
+  return (
+    <Suspense fallback={<Skeleton className="h-24 w-full rounded-2xl" />}>
+      <ReportDetailContent />
+    </Suspense>
   );
 }

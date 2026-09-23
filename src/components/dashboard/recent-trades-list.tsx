@@ -45,7 +45,7 @@ export function RecentTradesList() {
           {recent.map((trade) => (
             <Link
               key={trade.id}
-              href={`/journal/${trade.id}`}
+              href={`/journal/detail?tradeId=${trade.id}`}
               className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-accent/50"
             >
               <div className="flex items-center gap-3 min-w-0">

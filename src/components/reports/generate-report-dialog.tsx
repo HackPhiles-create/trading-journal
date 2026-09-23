@@ -36,7 +36,7 @@ export function GenerateReportDialog({ open, onOpenChange }: { open: boolean; on
       });
       toast.success(`${type === "WEEKLY" ? "Weekly" : "Monthly"} report generated.`);
       onOpenChange(false);
-      router.push(`/reports/${report.id}`);
+      router.push(`/reports/detail?reportId=${report.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to generate report.");
     }

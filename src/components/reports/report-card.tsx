@@ -9,7 +9,7 @@ import type { ReportDTO } from "@/hooks/use-reports";
 export function ReportCard({ report }: { report: ReportDTO }) {
   return (
     <Link
-      href={`/reports/${report.id}`}
+      href={`/reports/detail?reportId=${report.id}`}
       className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft transition-shadow hover:shadow-elevated"
     >
       <div className="flex items-center gap-3">

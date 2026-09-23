@@ -41,7 +41,7 @@ export function DayTradesDrawer({ date, open, onOpenChange }: { date: string | n
           {trades.map((t) => (
             <Link
               key={t.id}
-              href={`/journal/${t.id}`}
+              href={`/journal/detail?tradeId=${t.id}`}
               className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-accent/50"
             >
               <div className="flex items-center gap-2.5">

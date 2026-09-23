@@ -133,7 +133,7 @@ export function TradeForm() {
       for (const w of warnings) toast.warning(w.message);
       playSuccess();
       toast.success("Trade logged.");
-      router.push(`/journal/${trade.id}`);
+      router.push(`/journal/detail?tradeId=${trade.id}`);
     } catch (err) {
       playError();
       toast.error(err instanceof Error ? err.message : "Failed to save trade.");
