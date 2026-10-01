@@ -27,6 +27,25 @@ export async function resolveScreenshotUri(relativePath: string): Promise<string
   return Capacitor.convertFileSrc(uri);
 }
 
+const MIME_BY_EXT: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
+
+// Reads a stored screenshot's bytes for embedding directly in a PDF (via
+// react-pdf's <Image src="data:..."> ), as opposed to resolveScreenshotUri's
+// capacitor:// src which only works inside a WebView <img>. Returns null
+// instead of throwing so a report export doesn't fail over one missing file.
+export async function readScreenshotAsDataUri(relativePath: string): Promise<string | null> {
+  try {
+    // No `encoding` option -> native Capacitor always returns base64 as a
+    // string (Blob is web-only, which this path never runs under).
+    const { data } = await Filesystem.readFile({ path: `screenshots/${relativePath}`, directory: Directory.Data });
+    const ext = relativePath.split(".").pop()?.toLowerCase() ?? "";
+    const mime = MIME_BY_EXT[ext] ?? "image/png";
+    return `data:${mime};base64,${data as string}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadScreenshotLocal(
   tradeId: string,
   file: File,

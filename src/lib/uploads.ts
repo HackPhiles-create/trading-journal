@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 
 // Defaults to ./uploads for local dev; in production (e.g. Railway) set
 // UPLOADS_DIR to a path inside a mounted persistent volume, or uploaded
@@ -30,4 +31,23 @@ export function resolveUploadPath(relativePath: string): string | null {
     return null;
   }
   return resolved;
+}
+
+const MIME_BY_EXT: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
+
+// Reads a stored screenshot off disk for embedding directly in a PDF (via
+// react-pdf's <Image src="data:..."> ), rather than round-tripping through
+// the /api/uploads HTTP route. Returns null instead of throwing so a report
+// export doesn't fail just because one screenshot's file is missing.
+export async function readUploadAsDataUri(relativePath: string): Promise<string | null> {
+  const absolutePath = resolveUploadPath(relativePath);
+  if (!absolutePath) return null;
+  try {
+    const bytes = await readFile(absolutePath);
+    const ext = path.extname(absolutePath).slice(1).toLowerCase();
+    const mime = MIME_BY_EXT[ext] ?? "image/png";
+    return `data:${mime};base64,${bytes.toString("base64")}`;
+  } catch {
+    return null;
+  }
 }

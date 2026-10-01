@@ -7,10 +7,11 @@ import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { tradesToCsv } from "@/lib/export/csv";
 import { tradesToWorkbookArray } from "@/lib/export/xlsx";
-import { ReportDocument } from "@/lib/export/pdf-document";
+import { ReportDocument, toReportDocTrade } from "@/lib/export/pdf-document";
 import { computeEquitySeries } from "@/lib/analytics/compute";
 import { listTrades } from "@/lib/local/trades";
 import { buildReportSnapshotLocal } from "@/lib/local/reports";
+import { readScreenshotAsDataUri } from "@/lib/local/screenshots";
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -77,12 +78,21 @@ export async function exportReportLocal(opts: {
 
   // pdf
   const equityPoints = computeEquitySeries(trades).map((p) => p.equity);
+  const filePaths = Array.from(new Set(trades.flatMap((t) => t.screenshots.map((s) => s.filePath))));
+  const dataUris = new Map<string, string>();
+  await Promise.all(
+    filePaths.map(async (filePath) => {
+      const dataUri = await readScreenshotAsDataUri(filePath);
+      if (dataUri) dataUris.set(filePath, dataUri);
+    })
+  );
+  const reportTrades = trades.map((t) => toReportDocTrade(t, dataUris));
   // react-pdf's `pdf()` typings expect a <Document> element specifically;
   // ReportDocument renders one internally but isn't typed as one itself.
   const element = React.createElement(ReportDocument, {
     report: snapshot,
     equityPoints: equityPoints.length ? equityPoints : [0, 0],
-    trades,
+    trades: reportTrades,
   }) as unknown as Parameters<typeof pdf>[0];
   const blob = await pdf(element).toBlob();
   const base64 = await blobToBase64(blob);
